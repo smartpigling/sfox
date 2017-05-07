@@ -1,0 +1,6 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+  <p>测试！！！</p>
+  <img src="{{ url_for('graph.draw', cropzonekey = name) }}" alt="Image Placeholder" height="100">
+{% endblock %}
