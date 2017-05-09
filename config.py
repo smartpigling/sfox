@@ -1,5 +1,6 @@
 from celery.schedules import crontab
 
+
 class BaseConfig(object):
     # Flask Config
     SECRET_KEY = b'D\xfc2\xdf\x18\xb2\xd2d\xf9\xae\xeb\xa7\xc4\xba\xd5\xec9\x89\xae\xf9\xcf\x18M'
@@ -8,6 +9,7 @@ class BaseConfig(object):
     DB_PORT = 27017
     DB_DBNAME = 'stock'
     # Celery Config
+    CELERY_IMPORTS = ('app.tasks.crawl', 'app.tasks.graph')
     CELERY_BROKER_URL = 'mongodb://localhost:27017/stock'
     CELERY_RESULT_BACKEND = 'mongodb://localhost:27017/'
     CELERY_MONGODB_BACKEND_SETTINGS = {

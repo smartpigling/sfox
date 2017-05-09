@@ -25,11 +25,13 @@ def create_app(config_name):
     app.register_blueprint(portal_blueprint, url_prefix='/portal')
 
     from app.views.portal import HomeView
-    from app.views.basics import StockBasicsView
+    from app.views.basics import StockBasicsView, TrendView
     # Create admin
     admin = Admin(app, name='SFox', index_view=HomeView(name='首页', url='/admin'),
                   template_mode='bootstrap3')
-    admin.add_view(StockBasicsView(db.stock_basics, name='股票基本信息', endpoint='stock_basics'))
+    admin.add_view(
+        StockBasicsView(db.stock_basics, name='股票基本信息', endpoint='stock_basics'))
+    admin.add_view(TrendView(db.stock_basics, name='买卖趋势', endpoint='trend_view'))
 
     return app
 

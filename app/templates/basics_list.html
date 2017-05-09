@@ -1,0 +1,6 @@
+{% extends 'admin/model/list.html' %}
+
+{% block model_menu_bar_before_filters %}
+    {{ super() }}
+    <a href="{{ url_for('portal.get_stock_basics') }}" class="btn btn-default btn-sm">数据同步</a>
+{% endblock %}

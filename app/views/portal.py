@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, request, jsonify
+from flask import Blueprint, current_app, redirect, url_for, jsonify
 from flask_admin import AdminIndexView, expose
 from app.tasks.crawl import async_stock_basics
 from app import db
@@ -16,7 +16,6 @@ class HomeView(AdminIndexView):
 
 @portal.route('/get_stock_basics', methods=['GET'])
 def get_stock_basics():
-    app = current_app._get_current_object()
-    print(db['stock_basics'].find({}).count())
-    async_stock_basics.delay()
-    return jsonify(code=0, message=u'成功')
+    from app.tasks.crawl import async_stock_basics
+    async_stock_basics()
+    return redirect(url_for('stock_basics.index_view'))

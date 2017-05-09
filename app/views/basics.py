@@ -3,10 +3,72 @@ from wtforms import form
 from flask import current_app, url_for, redirect, request, flash, Markup
 from flask_admin.actions import action
 from flask_admin.contrib.pymongo import ModelView, filters
+from app.utils import dateutil as du
+from app import db
 import re
+import pymongo
 
 
-class StockBasicsView(ModelView):
+class BasicsView(ModelView):
+
+    def scaffold_query(self):
+        return {}
+
+    def get_list(self, page, sort_column, sort_desc, search, filters,
+                 execute=True, page_size=None):
+        query = self.scaffold_query()
+
+        # Filters
+        if self._filters:
+            data = []
+
+            for flt, flt_name, value in filters:
+                f = self._filters[flt]
+                data = f.apply(data, value)
+
+            if data:
+                if len(data) == 1:
+                    query = data[0]
+                else:
+                    query['$and'] = data
+
+        # Search
+        if self._search_supported and search:
+            query = self._search(query, search)
+
+        # Get count
+        count = self.coll.find(query).count() if not self.simple_list_pager else None
+
+        # Sorting
+        sort_by = None
+
+        if sort_column:
+            sort_by = [(sort_column, pymongo.DESCENDING if sort_desc else pymongo.ASCENDING)]
+        else:
+            order = self._get_default_order()
+
+            if order:
+                sort_by = [(order[0], pymongo.DESCENDING if order[1] else pymongo.ASCENDING)]
+
+        # Pagination
+        if page_size is None:
+            page_size = self.page_size
+
+        skip = 0
+
+        if page and page_size:
+            skip = page * page_size
+
+        results = self.coll.find(query, sort=sort_by, skip=skip, limit=page_size)
+
+        if execute:
+            results = list(results)
+
+        return count, results
+
+
+class StockBasicsView(BasicsView):
+    list_template = 'basics_list.html'
     column_labels = {
         'code': '代码',
         'name': '名称',
@@ -41,32 +103,40 @@ class StockBasicsView(ModelView):
     column_searchable_list = ['code']
     column_formatters = {
         'code': lambda v, c, m, p: Markup(
-            # '<a href={0}?search={1}>{2}</a>'.format(url_for('sample.index_view'), m['code'], m['code'])
+            '<a href={0}?search={1}>{2}</a>'.format(url_for('trend_view.index_view'), m['code'], m['code'])
         )
     }
+
+    def scaffold_query(self):
+        query = {'date': {'$regex': du.last_trading_day()}}
+        return query
 
     @action('data_update_action', '数据同步')
     def data_update_action(self, ids):
         try:
-            app = current_app._get_current_object()
-
-            flash('所有数据更新完成!')
+            from app.tasks.crawl import async_stock_basics
+            async_stock_basics()
+            flash('上市公司基本信息更新完成!')
         except Exception as ex:
             if not self.handle_view_exception(ex):
                 raise
             flash(str(ex), 'error')
 
-    @action('data_analysis_action', '数据抽样')
+    @action('data_analysis_action', '趋势分析')
     def data_analysis_action(self, ids):
         try:
-            app = current_app._get_current_object()
+            from app.tasks.crawl import async_hist_market, async_hist_trade
+            from app.tasks.graph import trade_strength_trend_chart
             codes = []
             for pk in ids:
-                stock = app.db.stock_basics.find_one({'_id': ObjectId(pk)})
-                codes.append(stock['code'])
+                stock = db.stock_basics.find_one({'_id': ObjectId(pk)})
+                code = stock['code']
+                codes.append(code)
                 # 数据采样乐观趋势分析
-                # optimism_trend_analysis(stock['code'])
-            return redirect('{0}?search={1}'.format(url_for('sample.index_view'), ','.join(codes)))
+                async_hist_market.delay(code)
+                async_hist_trade(code)
+                trade_strength_trend_chart(code)
+            return redirect('{0}?search={1}'.format(url_for('trend_view.index_view'), ','.join(codes)))
         except Exception as ex:
             if not self.handle_view_exception(ex):
                 raise
@@ -81,11 +151,11 @@ class StockBasicsView(ModelView):
     page_size = 20
 
 
-class SampleView(ModelView):
+class TrendView(BasicsView):
     column_labels = {
         'code': '代码',
         'name': '名称',
-        'trend_image': '乐观趋势'
+        'trend_image': '买卖趋势'
     }
     column_list = ('code', 'name', 'trend_image')
     column_searchable_list = ['code']
@@ -106,6 +176,10 @@ class SampleView(ModelView):
 
     form = form.Form
     page_size = 20
+
+    def scaffold_query(self):
+        query = {'date': {'$regex': du.last_trading_day()}}
+        return query
 
     def _search(self, query, search_term):
         if search_term.find(',') > 0:
