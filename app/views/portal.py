@@ -4,7 +4,7 @@ from app.tasks.crawl import async_stock_basics
 from app import db
 import tushare as ts
 
-portal = Blueprint('portal', __name__)
+portal_blueprint = Blueprint('portal', __name__)
 
 
 class HomeView(AdminIndexView):
@@ -14,7 +14,7 @@ class HomeView(AdminIndexView):
         return self.render('admin/index.html', rows=df)
 
 
-@portal.route('/get_stock_basics', methods=['GET'])
+@portal_blueprint.route('/get_stock_basics', methods=['GET'])
 def get_stock_basics():
     from app.tasks.crawl import async_stock_basics
     async_stock_basics()

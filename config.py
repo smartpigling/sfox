@@ -19,9 +19,9 @@ class BaseConfig(object):
     CELERY_TIMEZONE = 'Asia/Shanghai'
     # 定时任务
     CELERYBEAT_SCHEDULE = {
-        'async_stock_basics': {
-            'task': 'app.tasks.crawl.async_stock_basics',
-            'schedule': crontab(minute='*/2'),
+        'fetch_all_dk_data': {
+            'task': 'app.tasks.fetchdata.fetch_all_dk_data',
+            'schedule': crontab(minute=30, hour=2),
             'args': ()
         }
     }

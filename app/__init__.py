@@ -21,7 +21,7 @@ def create_app(config_name):
     babel = Babel(app)
     babel.localeselector(get_locale)
     # Blueprint
-    from app.views.portal import portal as portal_blueprint
+    from app.views.portal import portal_blueprint
     app.register_blueprint(portal_blueprint, url_prefix='/portal')
 
     from app.views.portal import HomeView

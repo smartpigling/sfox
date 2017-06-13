@@ -3,7 +3,7 @@ from wtforms import form
 from flask import current_app, url_for, redirect, request, flash, Markup
 from flask_admin.actions import action
 from flask_admin.contrib.pymongo import ModelView, filters
-from app.utils import dateutil as du
+from app.utils import datetool as du
 from app import db
 import re
 import pymongo

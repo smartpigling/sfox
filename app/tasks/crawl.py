@@ -1,6 +1,6 @@
 from celery.utils.log import get_task_logger
 from app import celery, db
-from app.utils import dateutil as du
+from app.utils import datetool as du
 import pandas as pd
 import tushare as ts
 import json
@@ -33,7 +33,7 @@ def async_hist_market(code):
         start = du.delay_days(result['date'])
     except:
         start = du.from_now_days(-90)
-    df = ts.get_k_data(code, ktype='D', start=start, end=du.last_trading_day())
+    df = ts.get_k_data(code, ktype='D', start=start, end=du.from_now_days(-1))
     if not df.empty:
         db.hist_market.insert(json.loads(df.to_json(orient='records')))
 
@@ -63,7 +63,7 @@ def async_hist_trade(code):
         start = du.delay_days(result['date'])
     except:
         start = du.from_now_days(-90)
-    dates = pd.date_range(start=start, end=du.last_trading_day()).format()
+    dates = pd.date_range(start=start, end=du.from_now_days(-1)).format()
     for date in dates:
         async_hist_trade_details.delay(code, date)
 

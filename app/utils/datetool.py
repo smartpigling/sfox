@@ -15,17 +15,6 @@ def from_now_days(day):
     return date.strftime('%Y-%m-%d')
 
 
-def last_trading_day():
-    today = datetime.datetime.today().date()
-    today = int(today.strftime("%w"))
-    if today == 0:
-        return from_now_days(-2)
-    elif today == 1:
-        return from_now_days(-3)
-    else:
-        return from_now_days(-1)
-
-
 def delay_days(date, day=1):
     _date = datetime.datetime.strptime(date, '%Y-%m-%d') + datetime.timedelta(day)
     return _date.strftime('%Y-%m-%d')

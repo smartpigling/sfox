@@ -1,6 +1,6 @@
 from celery.utils.log import get_task_logger
 from app import celery, db
-from app.utils import dateutil as du
+from app.utils import datetool as du
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
